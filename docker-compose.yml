@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  redis1:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data1:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+
+  app:
+    build: .
+    ports:
+      - "8000:5000"
+    environment:
+      - REDIS_HOST=redis1
+    depends_on:
+      redis1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  redis_data1:
